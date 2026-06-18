@@ -40,7 +40,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install dependencies and run commit-check
+    - name: Install dependencies and run commit-check (Linux/macOS)
+      if: runner.os != 'Windows'
       shell: bash
       run: |
         if [[ "$RUNNER_OS" == "Linux" ]]; then
@@ -65,6 +66,45 @@ runs:
         python3 -m pip install commit_check-*.whl pygithub-*.whl
 
         python3 "$GITHUB_ACTION_PATH/main.py"
+      env:
+        MESSAGE: ${{ inputs.message }}
+        BRANCH: ${{ inputs.branch }}
+        AUTHOR_NAME: ${{ inputs.author-name }}
+        AUTHOR_EMAIL: ${{ inputs.author-email }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        JOB_SUMMARY: ${{ inputs.job-summary }}
+        PR_COMMENTS: ${{ inputs.pr-comments }}
+        PR_TITLE: ${{ inputs.pr-title }}
+        GITHUB_TOKEN: ${{ github.token }}
+
+    - name: Install dependencies and run commit-check (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        # Set up virtual environment
+        python -m venv venv
+        & ".\venv\Scripts\Activate.ps1"
+
+        # Download artifact
+        python -m pip download -r "$env:GITHUB_ACTION_PATH\requirements.txt"
+
+        # Verify artifact attestations
+        $whlFile = Get-Item commit_check-*.whl | Select-Object -First 1
+        if ($null -eq $whlFile) {
+          Write-Error "No wheel file found"
+          exit 1
+        }
+        
+        gh attestation verify $whlFile.Name -R commit-check/commit-check
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Artifact verification failed. Aborting installation."
+          exit 1
+        }
+
+        # Install artifact
+        python -m pip install $whlFile.Name pygithub-*.whl
+
+        python "$env:GITHUB_ACTION_PATH\main.py"
       env:
         MESSAGE: ${{ inputs.message }}
         BRANCH: ${{ inputs.branch }}
