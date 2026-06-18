@@ -78,7 +78,7 @@ runs:
         PR_TITLE: ${{ inputs.pr-title }}
         GITHUB_TOKEN: ${{ github.token }}
     
-    - name: Install gh CLI (Windows)
+    - name: Install gh CLI and Install dependencies and run commit-check (Windows)
       if: runner.os == 'Windows'
       shell: powershell
       run: |
@@ -107,10 +107,6 @@ runs:
           Write-Host "GitHub CLI installed successfully"
         }
         
-    - name: Install dependencies and run commit-check (Windows)
-      if: runner.os == 'Windows'
-      shell: powershell
-      run: |
         # 获取完整的 gh 路径（在激活虚拟环境之前）
         $ghPath = (Get-Command gh).Source
 
