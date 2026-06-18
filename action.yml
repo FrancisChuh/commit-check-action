@@ -106,9 +106,6 @@ runs:
           
           Write-Host "GitHub CLI installed successfully"
         }
-        
-        # 获取完整的 gh 路径（在激活虚拟环境之前）
-        $ghPath = (Get-Command gh).Source
 
         # Set up virtual environment
         python -m venv venv
