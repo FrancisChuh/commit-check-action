@@ -82,13 +82,16 @@ runs:
       if: runner.os == 'Windows'
       shell: powershell
       run: |
+        # 获取完整的 gh 路径（在激活虚拟环境之前）
+        $ghPath = (Get-Command gh).Source
+
         # Set up virtual environment
         python -m venv venv
         & ".\venv\Scripts\Activate.ps1"
 
-        # Download wheels from GitHub Releases
-        & gh release download v2.8.0 --repo commit-check/commit-check --pattern "commit_check-*.whl"
-        & gh release download v2.8.0 --repo commit-check/commit-check --pattern "PyGithub-*.whl"
+        # 下载 wheels - 使用完整路径
+        & $ghPath release download v2.8.0 --repo commit-check/commit-check --pattern "commit_check-*.whl"
+        & $ghPath release download v2.8.0 --repo commit-check/commit-check --pattern "PyGithub-*.whl"
 
         # Verify artifact attestations
         $whlFiles = Get-Item commit_check-*.whl -ErrorAction SilentlyContinue
@@ -103,7 +106,7 @@ runs:
           $whlFile = $whlFiles
         }
 
-        & gh attestation verify $whlFile.Name -R commit-check/commit-check
+        & $ghPath attestation verify $whlFile.Name -R commit-check/commit-check
         if ($LASTEXITCODE -ne 0) {
           Write-Error "Artifact verification failed. Aborting installation."
           exit 1
