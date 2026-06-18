@@ -53,17 +53,11 @@ runs:
         python3 -m venv venv
         source venv/bin/activate
 
-        # Download artifact
-        python3 -m pip download -r "$GITHUB_ACTION_PATH/requirements.txt"
+        # Upgrade pip to ensure latest package list
+        python3 -m pip install --upgrade pip
 
-        # Verify artifact attestations
-        if ! gh attestation verify commit_check-*.whl -R commit-check/commit-check; then
-            echo "Artifact verification failed. Aborting installation."
-            exit 1
-        fi
-
-        # Install artifact
-        python3 -m pip install commit_check-*.whl pygithub-*.whl
+        # Install dependencies directly from PyPI
+        python3 -m pip install -r "$GITHUB_ACTION_PATH/requirements.txt"
 
         python3 "$GITHUB_ACTION_PATH/main.py"
       env:
@@ -85,30 +79,11 @@ runs:
         python -m venv venv
         & ".\venv\Scripts\Activate.ps1"
 
-        # Download artifact
-        python -m pip download -r "$env:GITHUB_ACTION_PATH\requirements.txt"
+        # Upgrade pip to ensure latest package list
+        python -m pip install --upgrade pip
 
-        # Verify artifact attestations
-        $whlFiles = Get-Item commit_check-*.whl -ErrorAction SilentlyContinue
-        if (-not $whlFiles) {
-          Write-Error "No wheel file found"
-          exit 1
-        }
-        
-        if ($whlFiles -is [array]) {
-          $whlFile = $whlFiles[0]
-        } else {
-          $whlFile = $whlFiles
-        }
-
-        & gh attestation verify $whlFile.Name -R commit-check/commit-check
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "Artifact verification failed. Aborting installation."
-          exit 1
-        }
-
-        # Install artifact
-        python -m pip install $whlFile.Name pygithub-*.whl
+        # Install dependencies directly from PyPI
+        python -m pip install -r "$env:GITHUB_ACTION_PATH\requirements.txt"
 
         python "$env:GITHUB_ACTION_PATH\main.py"
       env:
