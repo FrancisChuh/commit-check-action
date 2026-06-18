@@ -79,7 +79,7 @@ runs:
 
     - name: Install dependencies and run commit-check (Windows)
       if: runner.os == 'Windows'
-      shell: pwsh
+      shell: powershell
       run: |
         # Set up virtual environment
         python -m venv venv
@@ -89,13 +89,19 @@ runs:
         python -m pip download -r "$env:GITHUB_ACTION_PATH\requirements.txt"
 
         # Verify artifact attestations
-        $whlFile = Get-Item commit_check-*.whl | Select-Object -First 1
-        if ($null -eq $whlFile) {
+        $whlFiles = Get-Item commit_check-*.whl -ErrorAction SilentlyContinue
+        if (-not $whlFiles) {
           Write-Error "No wheel file found"
           exit 1
         }
         
-        gh attestation verify $whlFile.Name -R commit-check/commit-check
+        if ($whlFiles -is [array]) {
+          $whlFile = $whlFiles[0]
+        } else {
+          $whlFile = $whlFiles
+        }
+
+        & gh attestation verify $whlFile.Name -R commit-check/commit-check
         if ($LASTEXITCODE -ne 0) {
           Write-Error "Artifact verification failed. Aborting installation."
           exit 1
