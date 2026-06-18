@@ -112,8 +112,8 @@ runs:
         & ".\venv\Scripts\Activate.ps1"
 
         # 下载 wheels - 使用完整路径
-        & "$ghPath\gh.exe" release download v2.8.0 --repo commit-check/commit-check --pattern "commit_check-*.whl"
-        & "$ghPath\gh.exe" release download v2.8.0 --repo commit-check/commit-check --pattern "PyGithub-*.whl"
+        & gh release download v2.8.0 --repo commit-check/commit-check --pattern "commit_check-*.whl"
+        & gh release download v2.8.0 --repo commit-check/commit-check --pattern "PyGithub-*.whl"
 
         # Verify artifact attestations
         $whlFiles = Get-Item commit_check-*.whl -ErrorAction SilentlyContinue
@@ -128,7 +128,7 @@ runs:
           $whlFile = $whlFiles
         }
 
-        & "$ghPath\gh.exe" attestation verify $whlFile.Name -R commit-check/commit-check
+        & gh attestation verify $whlFile.Name -R commit-check/commit-check
         if ($LASTEXITCODE -ne 0) {
           Write-Error "Artifact verification failed. Aborting installation."
           exit 1
