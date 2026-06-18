@@ -40,6 +40,10 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Setup GitHub CLI
+      uses: actions/gh@v1
+      with:
+        version: latest
     - name: Install dependencies and run commit-check (Linux/macOS)
       if: runner.os != 'Windows'
       shell: bash
