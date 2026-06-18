@@ -53,9 +53,8 @@ runs:
         python3 -m venv venv
         source venv/bin/activate
 
-        # Download wheels from GitHub Releases
-        gh release download v2.8.0 --repo commit-check/commit-check --pattern "commit_check-*.whl"
-        gh release download v2.8.0 --repo commit-check/commit-check --pattern "PyGithub-*.whl"
+        # Download artifact
+        python3 -m pip download -r "$GITHUB_ACTION_PATH/requirements.txt"
 
         # Verify artifact attestations
         if ! gh attestation verify commit_check-*.whl -R commit-check/commit-check; then
@@ -63,8 +62,8 @@ runs:
             exit 1
         fi
 
-        # Install artifacts
-        python3 -m pip install commit_check-*.whl PyGithub-*.whl
+        # Install artifact
+        python3 -m pip install commit_check-*.whl pygithub-*.whl
 
         python3 "$GITHUB_ACTION_PATH/main.py"
       env:
@@ -77,66 +76,34 @@ runs:
         PR_COMMENTS: ${{ inputs.pr-comments }}
         PR_TITLE: ${{ inputs.pr-title }}
         GITHUB_TOKEN: ${{ github.token }}
-    
-    - name: Install gh CLI and Install dependencies and run commit-check (Windows)
+
+    - name: Install dependencies and run commit-check (Windows)
       if: runner.os == 'Windows'
-      shell: powershell
+      shell: pwsh
       run: |
-        # Install GitHub CLI using scoop or choco if available
-        if (Get-Command scoop -ErrorAction SilentlyContinue) {
-          scoop install gh
-        } elseif (Get-Command choco -ErrorAction SilentlyContinue) {
-          choco install gh -y
-        } else {
-          # Download and install gh from GitHub releases
-          $version = "2.50.0"
-          $url = "https://github.com/cli/cli/releases/download/v$version/gh_${version}_windows_amd64.zip"
-          $output = "$env:TEMP\gh.zip"
-          
-          Write-Host "Downloading GitHub CLI..."
-          (New-Object System.Net.WebClient).DownloadFile($url, $output)
-          
-          Write-Host "Extracting GitHub CLI..."
-          Expand-Archive -Path $output -DestinationPath "$env:TEMP" -Force
-          
-          # Add to PATH
-          $ghPath = "$env:TEMP\gh_${version}_windows_amd64\bin"
-          $env:PATH = "$ghPath;$env:PATH"
-          [Environment]::SetEnvironmentVariable("PATH", "$ghPath;$env:PATH", "Process")
-          
-          Write-Host "GitHub CLI installed successfully"
-        }
+        # Install dependencies and run commit-check (Windows)
+        # Set up environment variables
+        $env:DEB_PYTHON_INSTALL_LAYOUT = "deb"
 
-        # Set up virtual environment
+        # Create virtual environment
         python -m venv venv
-        & ".\venv\Scripts\Activate.ps1"
 
-        # 下载 wheels - 使用完整路径
-        & gh release download v2.8.0 --repo commit-check/commit-check --pattern "commit_check-*.whl"
-        & gh release download v2.8.0 --repo commit-check/commit-check --pattern "PyGithub-*.whl"
+        # Activate virtual environment
+        . .\venv\Scripts\Activate.ps1
+
+        # Download artifact
+        python -m pip download -r "$env:GITHUB_ACTION_PATH\requirements.txt"
 
         # Verify artifact attestations
-        $whlFiles = Get-Item commit_check-*.whl -ErrorAction SilentlyContinue
-        if (-not $whlFiles) {
-          Write-Error "No commit_check wheel file found"
-          exit 1
+        if (-not (gh attestation verify commit_check-*.whl -R commit-check/commit-check)) {
+            Write-Host "Artifact verification failed. Aborting installation."
+            exit 1
         }
 
-        if ($whlFiles -is [array]) {
-          $whlFile = $whlFiles[0]
-        } else {
-          $whlFile = $whlFiles
-        }
+        # Install artifact
+        python -m pip install commit_check-*.whl pygithub-*.whl
 
-        & gh attestation verify $whlFile.Name -R commit-check/commit-check
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "Artifact verification failed. Aborting installation."
-          exit 1
-        }
-
-        # Install artifacts
-        python -m pip install commit_check-*.whl PyGithub-*.whl
-
+        # Run main script
         python "$env:GITHUB_ACTION_PATH\main.py"
       env:
         MESSAGE: ${{ inputs.message }}
