@@ -79,7 +79,7 @@ runs:
 
     - name: Install dependencies and run commit-check (Windows)
       if: runner.os == 'Windows'
-      shell: pwsh
+      shell: powershell
       run: |
         # Install dependencies and run commit-check (Windows)
         # Set up environment variables
