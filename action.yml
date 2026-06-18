@@ -40,10 +40,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup GitHub CLI
-      uses: actions/gh@v1
-      with:
-        version: latest
     - name: Install dependencies and run commit-check (Linux/macOS)
       if: runner.os != 'Windows'
       shell: bash
@@ -86,6 +82,31 @@ runs:
       if: runner.os == 'Windows'
       shell: powershell
       run: |
+        # Install GitHub CLI using scoop or choco if available
+        if (Get-Command scoop -ErrorAction SilentlyContinue) {
+          scoop install gh
+        } elseif (Get-Command choco -ErrorAction SilentlyContinue) {
+          choco install gh -y
+        } else {
+          # Download and install gh from GitHub releases
+          $version = "2.50.0"
+          $url = "https://github.com/cli/cli/releases/download/v$version/gh_${version}_windows_amd64.zip"
+          $output = "$env:TEMP\gh.zip"
+          
+          Write-Host "Downloading GitHub CLI..."
+          (New-Object System.Net.WebClient).DownloadFile($url, $output)
+          
+          Write-Host "Extracting GitHub CLI..."
+          Expand-Archive -Path $output -DestinationPath "$env:TEMP" -Force
+          
+          # Add to PATH
+          $ghPath = "$env:TEMP\gh_${version}_windows_amd64\bin"
+          $env:PATH = "$ghPath;$env:PATH"
+          [Environment]::SetEnvironmentVariable("PATH", "$ghPath;$env:PATH", "Process")
+          
+          Write-Host "GitHub CLI installed successfully"
+        }
+
         # 获取完整的 gh 路径（在激活虚拟环境之前）
         $ghPath = (Get-Command gh).Source
 
