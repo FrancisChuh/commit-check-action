@@ -89,7 +89,7 @@ runs:
 
         # 升级 pip（加 --trusted-host 防 SSL 问题）
         python -m pip install --upgrade pip --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org
-        python -m pip download-r "$env:GITHUB_ACTION_PATH\requirements.txt" --trusted-host pypi.org
+        python -m pip download -r "$env:GITHUB_ACTION_PATH\requirements.txt" --trusted-host pypi.org
         
         # ✅ 修复：添加调试信息，显示所有文件
         Write-Host "Files in current directory:"
