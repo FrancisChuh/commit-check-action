@@ -142,4 +142,4 @@ runs:
         JOB_SUMMARY: ${{ inputs.job-summary }}
         PR_COMMENTS: ${{ inputs.pr-comments }}
         PR_TITLE: ${{ inputs.pr-title }}
-        GITHUB_TOKEN: ${{ inputs.gitea-token }}
+        GITHUB_TOKEN: ${{ github.token }}
