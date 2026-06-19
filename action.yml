@@ -90,34 +90,45 @@ runs:
         # 升级 pip（加 --trusted-host 防 SSL 问题）
         python -m pip install --upgrade pip --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org
         python -m pip install -r "$env:GITHUB_ACTION_PATH\requirements.txt" --trusted-host pypi.org
+        
+        # ✅ 修复：添加调试信息，显示所有文件
+        Write-Host "Files in current directory:"
+        Get-ChildItem -Path . | Format-List Name
 
-        # 验证 commit_check-*.whl
-        $whlFile = Get-ChildItem -Path "commit_check-*.whl" | Select-Object -First 1
-        if (-not $whlFile) { 
-            Write-Host "Error: No commit_check wheel found."
+        # ✅ 修复：使用更宽松的匹配模式
+        $commitCheckWhl = Get-ChildItem -Path "commit_check*.whl" | Select-Object -First 1
+        if (-not $commitCheckWhl) {
+            Write-Host "Error: No commit_check wheel found. Available files:"
+            Get-ChildItem -Path *.whl | Format-List Name
             exit 1
         }
-        gh attestation verify $whlFile.FullName -R commit-check/commit-check
+
+        Write-Host "Found commit_check wheel: $($commitCheckWhl.Name)"
+    
+        # 验证文件
+        gh attestation verify $commitCheckWhl.FullName -R commit-check/commit-check
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "Verification failed!"
+            Write-Host "Artifact verification failed!"
             exit 1
         }
 
-        # 验证 pygithub-*.whl
-        $commitCheckWhl = Get-ChildItem -Path "commit_check-*.whl" | Select-Object -First 1
-        $pygithubWhl = Get-ChildItem -Path "pygithub-*.whl" | Select-Object -First 1
-        if (-not $commitCheckWhl -or -not $pygithubWhl) {
-            Write-Host "Error: Missing wheel files."
+        # 安装commit_check和pygithub
+        $pygithubWhl = Get-ChildItem -Path "pygithub*.whl" | Select-Object -First 1
+        if (-not $pygithubWhl) {
+            Write-Host "Error: No pygithub wheel found."
             exit 1
         }
+        Write-Host "Found pygithub wheel: $($pygithubWhl.Name)"
+
         python -m pip install $commitCheckWhl.FullName $pygithubWhl.FullName
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "Installation failed!"
+            Write-Host "Pip installation failed!"
             exit 1
         }
 
         # 运行主脚本
         python "$env:GITHUB_ACTION_PATH\main.py"
+
       env:
         MESSAGE: ${{ inputs.message }}
         BRANCH: ${{ inputs.branch }}
