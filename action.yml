@@ -94,7 +94,7 @@ runs:
         python -m pip install --upgrade pip --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org
         
         # Fix SSL issue by adding --trusted-host flag
-        python -m pip download -r "$env:GITHUB_ACTION_PATH\requirements.txt" --trusted-host pypi.org
+        python -m pip install -r "$env:GITHUB_ACTION_PATH\requirements.txt" --trusted-host pypi.org
 
         # 1. 使用 Get-ChildItem 解析通配符，获取真实的文件名
         $whlFile = Get-ChildItem -Path "commit_check-*.whl" | Select-Object -First 1
