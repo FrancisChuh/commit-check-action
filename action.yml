@@ -96,7 +96,7 @@ runs:
         Get-ChildItem -Path . | Format-List Name
 
         # ✅ 修复：使用更宽松的匹配模式
-        $commitCheckWhl = Get-ChildItem -Path "commit-check*.whl" | Select-Object -First 1
+        $commitCheckWhl = Get-ChildItem -Path "commit_check*.whl" | Select-Object -First 1
         if (-not $commitCheckWhl) {
             Write-Host "Error: No commit_check wheel found. Available files:"
             Get-ChildItem -Path *.whl | Format-List Name
