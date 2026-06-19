@@ -37,6 +37,10 @@ inputs:
     description: check pull request title following conventional commits
     required: false
     default: false
+  gitea-token:
+    description: input gitea token 
+    required: false
+    default: false
 runs:
   using: "composite"
   steps:
@@ -138,4 +142,4 @@ runs:
         JOB_SUMMARY: ${{ inputs.job-summary }}
         PR_COMMENTS: ${{ inputs.pr-comments }}
         PR_TITLE: ${{ inputs.pr-title }}
-        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_TOKEN: ${{ inputs.gitea-token }}
