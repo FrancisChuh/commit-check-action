@@ -96,14 +96,54 @@ runs:
         # Fix SSL issue by adding --trusted-host flag
         python -m pip download -r "$env:GITHUB_ACTION_PATH\requirements.txt" --trusted-host pypi.org
 
-        # Verify artifact attestations
-        if (-not (gh attestation verify commit_check-*.whl -R commit-check/commit-check)) {
+        # 1. 使用 Get-ChildItem 解析通配符，获取真实的文件名
+        $whlFile = Get-ChildItem -Path "commit_check-*.whl" | Select-Object -First 1
+
+        # 2. 检查文件是否真实存在
+        if (-not $whlFile) {
+            Write-Host "Error: No matching wheel file found for 'commit_check-*.whl'."
+            exit 1
+        }
+
+        Write-Host "Verifying attestation for file: $($whlFile.Name)"
+
+        # 3. 执行 gh attestation verify 命令
+        gh attestation verify $whlFile.FullName -R commit-check/commit-check
+
+        # 4. 通过 $LASTEXITCODE 检查外部命令的返回状态
+        if ($LASTEXITCODE -ne 0) {
             Write-Host "Artifact verification failed. Aborting installation."
             exit 1
         }
 
-        # Install artifact
-        python -m pip install commit_check-*.whl pygithub-*.whl
+        Write-Host "Artifact verification succeeded."
+
+        # 1. 解析两个 whl 文件的真实文件名
+        $commitCheckWhl = Get-ChildItem -Path "commit_check-*.whl" | Select-Object -First 1
+        $pygithubWhl = Get-ChildItem -Path "pygithub-*.whl" | Select-Object -First 1
+
+        # 2. 检查文件是否真实存在
+        if (-not $commitCheckWhl) {
+            Write-Host "Error: No matching wheel file found for 'commit_check-*.whl'."
+            exit 1
+        }
+        if (-not $pygithubWhl) {
+            Write-Host "Error: No matching wheel file found for 'pygithub-*.whl'."
+            exit 1
+        }
+
+        Write-Host "Installing: $($commitCheckWhl.Name) and $($pygithubWhl.Name)"
+
+        # 3. 使用解析后的真实文件名执行 pip install
+        python -m pip install $commitCheckWhl.FullName $pygithubWhl.FullName
+
+        # 4. 检查 pip 安装是否成功
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Pip installation failed. Aborting."
+            exit 1
+        }
+
+        Write-Host "Pip installation succeeded."
 
         # Run main script
         python "$env:GITHUB_ACTION_PATH\main.py"
